@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 import ldap3
 from jupyterhub.auth import Authenticator
@@ -83,6 +84,16 @@ class LDAPAuthenticator(Authenticator):
 
         Set to an empty list or None to allow all users that have an LDAP account to log in,
         without performing any group membership checks.
+        """,
+    )
+
+    use_lookup_dn_user_for_group_lookup = Bool(
+        config=True,
+        allow_none=False,
+        default_value=False,
+        help="""
+        Flag if the lookup dn user should be used to check wether a user belongs to a group.
+        By default it will be False and the the current authenticating user will check for it.
         """,
     )
 
@@ -229,7 +240,14 @@ class LDAPAuthenticator(Authenticator):
         """,
     )
 
-    def resolve_username(self, username_supplied_by_user):
+    def get_lookup_dn_connection(self) -> Optional[ldap3.Connection]:
+        """Gets the user lookup dn connection.
+
+        Returns
+        -------
+        Optional[ldap3.Connection]
+            The connection or None if it fails.
+        """
         search_dn = self.lookup_dn_search_user
         if self.escape_userdn:
             search_dn = escape_filter_chars(search_dn)
@@ -240,6 +258,12 @@ class LDAPAuthenticator(Authenticator):
         if not is_bound:
             msg = "Failed to connect to LDAP server with search user '{search_dn}'"
             self.log.warning(msg.format(search_dn=search_dn))
+            return None
+        return conn
+
+    def resolve_username(self, username_supplied_by_user):
+        conn = self.get_lookup_dn_connection()
+        if conn is None:
             return (None, None)
 
         search_filter = self.lookup_dn_search_filter.format(
@@ -325,6 +349,47 @@ class LDAPAuthenticator(Authenticator):
             if found:
                 attrs = conn.entries[0].entry_attributes_as_dict
         return attrs
+
+    def is_user_in_group(self, conn: ldap3.Connection, group: str, userdn: str, username: str) -> bool:
+        """Getting wether the user is within the group.
+
+        Parameters
+        ----------
+        conn : ldap3.Connection
+            The ldap connection from the given user.
+        group : str
+            The group to check.
+        userdn : str
+            User distinguished name.
+        username : str
+            The username
+
+        Returns
+        -------
+        bool
+            If the user is member of the group.
+        """
+        if self.lookup_dn and self.use_lookup_dn_user_for_group_lookup:
+            conn = self.get_lookup_dn_connection()
+            if conn is None:
+                return False
+
+        group_filter = (
+            "(|"
+            "(member={userdn})"
+            "(uniqueMember={userdn})"
+            "(memberUid={uid})"
+            ")"
+        )
+        group_filter = group_filter.format(userdn=userdn, uid=username)
+        group_attributes = ["member", "uniqueMember", "memberUid"]
+        found = conn.search(
+            group,
+            search_scope=ldap3.BASE,
+            search_filter=group_filter,
+            attributes=group_attributes,
+        )
+        return found
 
     @gen.coroutine
     def authenticate(self, handler, data):
@@ -431,21 +496,7 @@ class LDAPAuthenticator(Authenticator):
             self.log.debug("username:%s Using dn %s", username, userdn)
             found = False
             for group in self.allowed_groups:
-                group_filter = (
-                    "(|"
-                    "(member={userdn})"
-                    "(uniqueMember={userdn})"
-                    "(memberUid={uid})"
-                    ")"
-                )
-                group_filter = group_filter.format(userdn=userdn, uid=username)
-                group_attributes = ["member", "uniqueMember", "memberUid"]
-                found = conn.search(
-                    group,
-                    search_scope=ldap3.BASE,
-                    search_filter=group_filter,
-                    attributes=group_attributes,
-                )
+                found = self.is_user_in_group(conn, group, userdn=userdn, username=username)
                 if found:
                     break
             if not found:

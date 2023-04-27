@@ -1,7 +1,7 @@
 from setuptools import setup
 
 
-version = "1.3.3.dev"
+version = "1.3.4"
 
 
 with open("./ldapauthenticator/__init__.py", "a") as f:
@@ -15,8 +15,8 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/jupyterhub/ldapauthenticator",
-    author="Yuvi Panda",
-    author_email="yuvipanda@riseup.net",
+    author="Jan Philipp Schneider",
+    author_email="jp-schneider@users.noreply.github.com",
     license="3 Clause BSD",
     packages=["ldapauthenticator"],
     install_requires=["jupyterhub", "ldap3", "tornado", "traitlets"],

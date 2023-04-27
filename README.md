@@ -1,27 +1,10 @@
 # ldapauthenticator
 
-[![TravisCI (.com) build status](https://img.shields.io/travis/com/jupyterhub/ldapauthenticator/master?logo=travis)](https://travis-ci.com/jupyterhub/ldapauthenticator)
-[![Latest PyPI version](https://img.shields.io/pypi/v/jupyterhub-ldapauthenticator?logo=pypi)](https://pypi.python.org/pypi/jupyterhub-ldapauthenticator)
-[![Latest conda-forge version](https://img.shields.io/conda/vn/conda-forge/jupyterhub-ldapauthenticator?logo=conda-forge)](https://anaconda.org/conda-forge/jupyterhub-ldapauthenticator)
-[![GitHub](https://img.shields.io/badge/issue_tracking-github-blue?logo=github)](https://github.com/jupyterhub/ldapauthenticator/issues)
-[![Discourse](https://img.shields.io/badge/help_forum-discourse-blue?logo=discourse)](https://discourse.jupyter.org/c/jupyterhub)
-[![Gitter](https://img.shields.io/badge/social_chat-gitter-blue?logo=gitter)](https://gitter.im/jupyterhub/jupyterhub)
+Forked and slight altered version from the original [LDAPAuthenticator](https://github.com/jupyterhub/ldapauthenticator).
 
 Simple LDAP Authenticator Plugin for JupyterHub
 
----
 
-Please note that this repository is participating in a study into sustainability
-of open source projects. Data will be gathered about this repository for
-approximately the next 12 months, starting from 2021-06-11.
-
-Data collected will include number of contributors, number of PRs, time taken to
-close/merge these PRs, and issues closed.
-
-For more information, please visit
-[the informational page](https://sustainable-open-science-and-software.github.io/) or download the [participant information sheet](https://sustainable-open-science-and-software.github.io/assets/PIS_sustainable_software.pdf).
-
----
 
 ## Installation ##
 
@@ -139,6 +122,18 @@ c.LDAPAuthenticator.allowed_groups = [
     "cn=operations,ou=groups,dc=wikimedia,dc=org",
 ]
 ```
+
+#### `LDAPAuthenticator.use_lookup_dn_user_for_group_lookup` ####
+
+This is a custom added setting that in case of using lookup_dn 
+also the check if a user belongs to a group will be done with the 
+`lookup_dn_search_user`. This can help if a user does not have
+sufficient permissions. Default is ``False``.
+
+```python
+c.LDAPAuthenticator.use_lookup_dn_user_for_group_lookup = True
+```
+
 
 #### `LDAPAuthenticator.valid_username_regex` ####
 
