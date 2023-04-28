@@ -31,7 +31,14 @@ For you to follow along according to these instructions, you need:
    git commit -m "release $VERSION"
    ```
 
-1. Reset the `version` variable in
+1. Optional: Build local wheel
+   To build a local wheel which can be installed with pip, 
+   execute the following command:
+   ```shell
+   python setup.py bdist_wheel
+   ```
+
+2. Reset the `version` variable in
    [setup.py](setup.py) appropriately with an incremented
    patch version and a `dev` element, then make a commit.
    ```
@@ -39,7 +46,7 @@ For you to follow along according to these instructions, you need:
    git commit -m "back to dev"
    ```
 
-1. Push your two commits to master.
+3. Push your two commits to master.
 
    ```shell
    # first push commits without a tags to ensure the
@@ -50,7 +57,7 @@ For you to follow along according to these instructions, you need:
    git push $ORIGIN master
    ```
 
-1. Create a git tag for the pushed release commit and push it.
+4. Create a git tag for the pushed release commit and push it.
 
    ```shell
    git tag -a $VERSION -m $VERSION HEAD~1
@@ -61,8 +68,3 @@ For you to follow along according to these instructions, you need:
    # then push it
    git push $ORIGIN refs/tags/$VERSION
    ```
-
-1. Following the release to PyPI, an automated PR should arrive to
-   [conda-forge/ldapauthenticator-feedstock](https://github.com/conda-forge/jupyterhub-ldapauthenticator-feedstock),
-   check for the tests to succeed on this PR and then merge it to successfully
-   update the package for `conda` on the conda-forge channel.

@@ -1,12 +1,25 @@
 from setuptools import setup
+import os
+import re
 
+version = "1.3.4"
 
-version = "1.3.4.dev"
+VERSION_PATTERN = "__version__\s?=\s?[\"\'][0-9A-z\.\-]+[\"\']"
 
+def set_version():
+    file = None
+    with open(os.path.join(os.path.dirname(__file__), "ldapauthenticator", "__init__.py"), "r") as f:
+        file = f.read()
+    with open(os.path.join(os.path.dirname(__file__), "ldapauthenticator", "__init__.py"), "w") as f:
+        version_str = "__version__ = '{}'".format(version)
+        matches = re.findall(VERSION_PATTERN, file)
+        if len(matches) == 0:
+            f.write(file + os.linesep + version_str + os.linesep)
+        else:
+            file = re.sub(VERSION_PATTERN, version_str, file)
+            f.write(file)
 
-with open("./ldapauthenticator/__init__.py", "a") as f:
-    f.write("\n__version__ = '{}'\n".format(version))
-
+set_version()
 
 setup(
     name="jupyterhub-ldapauthenticator",
