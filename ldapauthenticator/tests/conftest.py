@@ -4,9 +4,9 @@ from typing import Any, Optional
 
 import pytest
 from dotenv import load_dotenv
-
+import logging  
 from ..ldapauthenticator import LDAPAuthenticator
-
+import re
 @pytest.fixture(autouse=True, scope='session')
 def session_encapsule():
     setup_session()
@@ -37,7 +37,7 @@ def getenvvar(key: str, default: Optional[Any] = None, empty_as_none: bool = Fal
     value = None
     try:
         value = os.environ.get(key, default)
-        if isinstance(value, str) and len(value) == 0:
+        if isinstance(value, str) and len(value) == 0 and empty_as_none:
             value = None
     except KeyError as err:
         pass
@@ -67,7 +67,18 @@ def get_authenticator() -> LDAPAuthenticator:
     authenticator.use_lookup_dn_user_for_group_lookup = getenvvar("LDAP_USE_LOOKUP_DN_USER_FOR_GROUP_LOOKUP", False, parse_bool=True)
     authenticator.allowed_groups = list(getenvvar("LDAP_ALLOWED_GROUPS",
         "cn=admin_staff,ou=people,dc=planetexpress,dc=com|cn=ship_crew,ou=people,dc=planetexpress,dc=com").split("|"))
-    authenticator.auth_state_attributes =  list(getenvvar("LDAP_AUTH_STATE_ATTRIBUTES", "").split("|"))
+
+    state_attrib = getenvvar("LDAP_AUTH_STATE_ATTRIBUTES", "")
+    pattern = r"^([A-z0-9]+(\;[A-z0-9]+)*)?$"
+    parsed = list()
+
+    if re.fullmatch(pattern, state_attrib):
+        parsed = list(state_attrib.split(";"))
+    else:
+        logging.warning(f"LDAP_AUTH_STATE_ATTRIBUTES was invalid. It will be ignored!\n It must match the pattern: {pattern} \n Got: {state_attrib}")
+
+    
+    authenticator.auth_state_attributes = state_attrib
     
     return authenticator
 
